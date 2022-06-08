@@ -120,6 +120,28 @@ class DefaultArtifactAggregatorTest {
                 .contains(parentParentPluginRepository);
     }
 
+    @Test
+    void artifactTypeDependencyProperty() {
+        Artifact baseDependencyArtifact = aggregator.getAllArtifacts(stubProject()).stream()
+                .filter(matchesDependency(baseDependency))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("No base dependency found"));
+
+        assertThat(baseDependencyArtifact.getProperties().get(DefaultArtifactAggregator.KEY_ARTIFACT_TYPE))
+                .isEqualTo(DefaultArtifactAggregator.VAL_ARTIFACT_TYPE_DEPENDENCY);
+    }
+
+    @Test
+    void artifactTypePluginProperty() {
+        Artifact baseDependencyArtifact = aggregator.getAllArtifacts(stubProject()).stream()
+                .filter(matchesArtifact(basePlugin))
+                .findAny()
+                .orElseThrow(() -> new RuntimeException("No base plugin found"));
+
+        assertThat(baseDependencyArtifact.getProperties().get(DefaultArtifactAggregator.KEY_ARTIFACT_TYPE))
+                .isEqualTo(DefaultArtifactAggregator.VAL_ARTIFACT_TYPE_PLUGIN);
+    }
+
     private MavenProject stubProject() {
         Model model = new Model();
         Model parentModel = new Model();

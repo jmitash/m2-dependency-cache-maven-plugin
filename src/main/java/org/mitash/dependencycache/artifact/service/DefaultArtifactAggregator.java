@@ -22,12 +22,12 @@ import java.util.stream.Collectors;
 @Singleton
 class DefaultArtifactAggregator implements ArtifactAggregator {
 
-    private final static String SCOPE_SYSTEM = "system";
-    private final static String SCOPE_RUNTIME_PLUS_SYSTEM = "runtime+system";
+    static final String SCOPE_SYSTEM = "system";
+    static final String SCOPE_RUNTIME_PLUS_SYSTEM = "runtime+system";
 
-    private final static String KEY_ARTIFACT_TYPE = "org.mitash.dependencycache.ARTIFACT_TYPE";
-    private final static String VAL_ARTIFACT_TYPE_DEPENDENCY = "DEPENDENCY";
-    private final static String VAL_ARTIFACT_TYPE_PLUGIN = "PLUGIN";
+    static final String KEY_ARTIFACT_TYPE = "org.mitash.dependencycache.ARTIFACT_TYPE";
+    static final String VAL_ARTIFACT_TYPE_DEPENDENCY = "DEPENDENCY";
+    static final String VAL_ARTIFACT_TYPE_PLUGIN = "PLUGIN";
 
     @Override
     @SuppressWarnings("CollectionAddAllCanBeReplacedWithConstructor")
@@ -96,8 +96,7 @@ class DefaultArtifactAggregator implements ArtifactAggregator {
     private Artifact addArtifactTypeProperty(Artifact artifact, String value) {
         Map<String, String> newProperties = new HashMap<>(artifact.getProperties());
         newProperties.put(KEY_ARTIFACT_TYPE, value);
-        artifact.setProperties(newProperties);
-        return artifact;
+        return artifact.setProperties(newProperties);
     }
 
     private <T> Collection<T> getOrEmpty(Supplier<Collection<T>> supplier) {
