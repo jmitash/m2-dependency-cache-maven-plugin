@@ -1,10 +1,11 @@
 package org.mitash.dependencycache;
 
-import org.apache.maven.artifact.Artifact;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.artifact.Artifact;
 import org.mitash.dependencycache.artifact.service.ArtifactAggregator;
 
 import javax.inject.Inject;

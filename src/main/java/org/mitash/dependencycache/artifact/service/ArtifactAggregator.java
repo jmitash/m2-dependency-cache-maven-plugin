@@ -1,7 +1,8 @@
 package org.mitash.dependencycache.artifact.service;
 
-import org.apache.maven.artifact.Artifact;
+
 import org.apache.maven.project.MavenProject;
+import org.eclipse.aether.artifact.Artifact;
 
 import java.util.Set;
 
