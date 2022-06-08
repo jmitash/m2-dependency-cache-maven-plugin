@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,9 +33,13 @@ class DefaultArtifactAggregatorTest {
     private final Dependency parentDependency = dependency("parent", "dependency", "2");
     private final Dependency parentParentDependency = dependency("parentParent", "dependency", "3");
 
-    private final RemoteRepository baseRepository = remoteRepository("base", "1");
-    private final RemoteRepository parentRepository = remoteRepository("parent", "2");
-    private final RemoteRepository parentParentRepository = remoteRepository("parentParent", "3");
+    private final RemoteRepository baseProjectRepository = remoteRepository("base", "1");
+    private final RemoteRepository parentProjectRepository = remoteRepository("parent", "2");
+    private final RemoteRepository parentParentProjectRepository = remoteRepository("parentParent", "3");
+
+    private final RemoteRepository basePluginRepository = remoteRepository("base", "4");
+    private final RemoteRepository parentPluginRepository = remoteRepository("parent", "5");
+    private final RemoteRepository parentParentPluginRepository = remoteRepository("parentParent", "6");
 
     // TODO: dependency in both base and parent w/ different versions?
 
@@ -79,15 +84,55 @@ class DefaultArtifactAggregatorTest {
                 .anyMatch(matchesDependency(parentParentDependency));
     }
 
+    @Test
+    void findBaseProjectRepository() {
+        assertThat(aggregator.getAllProjectRepositories(stubProject()))
+                .contains(baseProjectRepository);
+    }
+
+    @Test
+    void findParentProjectRepository() {
+        assertThat(aggregator.getAllProjectRepositories(stubProject()))
+                .contains(parentProjectRepository);
+    }
+
+    @Test
+    void findGrandProjectRepository() {
+        assertThat(aggregator.getAllProjectRepositories(stubProject()))
+                .contains(parentParentProjectRepository);
+    }
+
+    @Test
+    void findBasePluginRepository() {
+        assertThat(aggregator.getAllPluginRepositories(stubProject()))
+                .contains(basePluginRepository);
+    }
+
+    @Test
+    void findParentPluginRepository() {
+        assertThat(aggregator.getAllPluginRepositories(stubProject()))
+                .contains(parentPluginRepository);
+    }
+
+    @Test
+    void findGrandPluginRepository() {
+        assertThat(aggregator.getAllPluginRepositories(stubProject()))
+                .contains(parentParentPluginRepository);
+    }
+
     private MavenProject stubProject() {
         Model model = new Model();
         Model parentModel = new Model();
         Model parentParentModel = new Model();
 
-        MavenProject project = new MavenProject(model);
-        MavenProject parentProject = new MavenProject(parentModel);
+        MavenProject project = new StubMavenProject(
+                model, baseProjectRepository, basePluginRepository);
+        MavenProject parentProject = new StubMavenProject(
+                parentModel, parentProjectRepository, parentPluginRepository);
+        MavenProject parentParentProject = new StubMavenProject(
+                parentParentModel, parentParentProjectRepository, parentParentPluginRepository);
+
         project.setParent(parentProject);
-        MavenProject parentParentProject = new MavenProject(parentParentModel);
         parentProject.setParent(parentParentProject);
 
         project.setPluginArtifacts(Collections.singleton(basePlugin));
@@ -136,5 +181,27 @@ class DefaultArtifactAggregatorTest {
                         && original.getGroupId().equals(artifact.getGroupId())
                         && original.getArtifactId().equals(artifact.getArtifactId())
                         && original.getVersion().equals(artifact.getVersion());
+    }
+
+    private static class StubMavenProject extends MavenProject {
+
+        private final RemoteRepository projectRepository;
+        private final RemoteRepository pluginRepository;
+
+        public StubMavenProject(Model model, RemoteRepository projectRepository, RemoteRepository pluginRepository) {
+            super(model);
+            this.projectRepository = projectRepository;
+            this.pluginRepository = pluginRepository;
+        }
+
+        @Override
+        public List<RemoteRepository> getRemoteProjectRepositories() {
+            return Collections.singletonList(projectRepository);
+        }
+
+        @Override
+        public List<RemoteRepository> getRemotePluginRepositories() {
+            return Collections.singletonList(pluginRepository);
+        }
     }
 }

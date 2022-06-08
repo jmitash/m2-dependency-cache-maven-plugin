@@ -5,18 +5,17 @@ import org.eclipse.aether.artifact.Artifact;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.util.artifact.DefaultArtifactTypeRegistry;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
+ * Default implementation of an Artifact Aggregator.
+ *
  * @author Jacob Mitash
  */
 @Named
@@ -25,6 +24,11 @@ class DefaultArtifactAggregator implements ArtifactAggregator {
 
     private final static String SCOPE_SYSTEM = "system";
     private final static String SCOPE_RUNTIME_PLUS_SYSTEM = "runtime+system";
+
+    private final static String KEY_ARTIFACT_TYPE = "org.mitash.dependencycache.ARTIFACT_TYPE";
+    private final static String VAL_ARTIFACT_TYPE_DEPENDENCY = "DEPENDENCY";
+    private final static String VAL_ARTIFACT_TYPE_PLUGIN = "PLUGIN";
+
     @Override
     @SuppressWarnings("CollectionAddAllCanBeReplacedWithConstructor")
     public Set<Artifact> getAllArtifacts(MavenProject project) {
@@ -36,6 +40,28 @@ class DefaultArtifactAggregator implements ArtifactAggregator {
                 parentProject -> artifacts.addAll(getImmediateArtifacts(parentProject)));
 
         return artifacts;
+    }
+
+    @Override
+    public Set<RemoteRepository> getAllProjectRepositories(MavenProject project) {
+        Set<RemoteRepository> remoteRepositories = new HashSet<>(
+                getOrEmpty(project::getRemoteProjectRepositories));
+
+        forEveryParent(project,
+                parentProject -> remoteRepositories.addAll(getOrEmpty(parentProject::getRemoteProjectRepositories)));
+
+        return remoteRepositories;
+    }
+
+    @Override
+    public Set<RemoteRepository> getAllPluginRepositories(MavenProject project) {
+        Set<RemoteRepository> remoteRepositories = new HashSet<>(
+                getOrEmpty(project::getRemotePluginRepositories));
+
+        forEveryParent(project,
+                parentProject -> remoteRepositories.addAll(getOrEmpty(parentProject::getRemotePluginRepositories)));
+
+        return remoteRepositories;
     }
 
     private Set<Artifact> getImmediateArtifacts(MavenProject project) {
@@ -51,6 +77,7 @@ class DefaultArtifactAggregator implements ArtifactAggregator {
         return getOrEmpty(project::getPluginArtifacts).stream()
                 .filter(artifact -> artifact.getFile() == null)
                 .map(RepositoryUtils::toArtifact)
+                .map(artifact -> addArtifactTypeProperty(artifact, VAL_ARTIFACT_TYPE_PLUGIN))
                 .collect(Collectors.toSet());
     }
 
@@ -60,13 +87,21 @@ class DefaultArtifactAggregator implements ArtifactAggregator {
                 .filter(modelDependency -> !SCOPE_SYSTEM.equals(modelDependency.getScope()))
                 .filter(modelDependency -> !SCOPE_RUNTIME_PLUS_SYSTEM.equals(modelDependency.getScope()))
                 .map(modelDependency -> RepositoryUtils.toDependency(
-                        modelDependency, new DefaultArtifactTypeRegistry()))
+                        modelDependency, typeId -> null))
                 .map(Dependency::getArtifact)
+                .map(artifact -> addArtifactTypeProperty(artifact, VAL_ARTIFACT_TYPE_DEPENDENCY))
                 .collect(Collectors.toSet());
     }
 
-    private <T> Set<T> getOrEmpty(Supplier<Set<T>> supplier) {
-        Set<T> value = supplier.get();
+    private Artifact addArtifactTypeProperty(Artifact artifact, String value) {
+        Map<String, String> newProperties = new HashMap<>(artifact.getProperties());
+        newProperties.put(KEY_ARTIFACT_TYPE, value);
+        artifact.setProperties(newProperties);
+        return artifact;
+    }
+
+    private <T> Collection<T> getOrEmpty(Supplier<Collection<T>> supplier) {
+        Collection<T> value = supplier.get();
         return value == null ? Collections.emptySet() : value;
     }
 

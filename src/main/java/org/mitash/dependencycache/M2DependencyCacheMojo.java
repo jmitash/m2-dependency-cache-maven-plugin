@@ -6,6 +6,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.mitash.dependencycache.artifact.service.ArtifactAggregator;
 
 import javax.inject.Inject;
@@ -32,7 +33,11 @@ public class M2DependencyCacheMojo extends AbstractMojo {
     @Override
     public void execute() {
         Set<Artifact> artifacts = artifactAggregator.getAllArtifacts(project);
+        Set<RemoteRepository> projectRepositories = artifactAggregator.getAllProjectRepositories(project);
+        Set<RemoteRepository> pluginRepositories = artifactAggregator.getAllPluginRepositories(project);
 
         getLog().info(String.format("Found %d artifacts", artifacts.size()));
+        getLog().info(String.format("Found %d project repositories", projectRepositories.size()));
+        getLog().info(String.format("Found %d plugin repositories", pluginRepositories.size()));
     }
 }
