@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * @author Jacob Mitash
@@ -30,25 +31,19 @@ class DefaultArtifactAggregator implements ArtifactAggregator {
         return artifacts;
     }
 
+    @SuppressWarnings("unchecked")
     private Set<Artifact> getImmediateArtifacts(MavenProject project) {
         Set<Artifact> artifacts = new HashSet<>();
 
-        artifacts.addAll(getDependencyArtifacts(project));
-        artifacts.addAll(getPluginArtifacts(project));
+        artifacts.addAll(getOrEmpty(project::getDependencyArtifacts));
+        artifacts.addAll(getOrEmpty(project::getPluginArtifacts));
 
         return artifacts;
     }
 
-    private Set<Artifact> getDependencyArtifacts(MavenProject project) {
-        //noinspection unchecked
-        return project.getDependencyArtifacts() == null ?
-                Collections.emptySet() : project.getDependencyArtifacts();
-    }
-
-    private Set<Artifact> getPluginArtifacts(MavenProject project) {
-        //noinspection unchecked
-        return project.getPluginArtifacts() == null ?
-                Collections.emptySet() : project.getPluginArtifacts();
+    private <T> Set<T> getOrEmpty(Supplier<Set<T>> supplier) {
+        Set<T> value = supplier.get();
+        return value == null ? Collections.emptySet() : value;
     }
 
     private void forEveryParent(MavenProject project, Consumer<MavenProject> consumer) {
